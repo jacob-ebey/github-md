@@ -20,5 +20,5 @@ html
 
 ## Examples:
 
-- /remix-run/remix/main/docs/index.md
-- /facebook/react/17.0.2/README.md
+- https://github-md.com/remix-run/remix/main/docs/index.md
+- https://github-md.com/facebook/react/17.0.2/README.md
