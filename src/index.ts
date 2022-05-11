@@ -31,6 +31,17 @@ type Cached = ApiData & {
   staleAt: number;
 };
 
+type CachedFile = {
+  path: string;
+  sha: string;
+};
+
+type CachedFiles = {
+  sha: string;
+  files: CachedFile[];
+  staleAt: number;
+};
+
 export default {
   fetch: handleFetch,
 };
@@ -49,10 +60,18 @@ async function handleFetch(
     return renderDemo(request, env, ctx);
   }
 
+  if (url.pathname.split("/").filter((s) => s !== "").length === 3) {
+    return renderFiles(request, env, ctx);
+  }
+
   return renderMarkdown(request, env, ctx);
 }
 
-async function renderDocs(request: Request, env: Env, ctx: ExecutionContext) {
+async function renderDocs(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<Response> {
   let url = new URL(request.url);
   let domain = new URL("/", url).href;
 
@@ -72,7 +91,11 @@ async function renderDocs(request: Request, env: Env, ctx: ExecutionContext) {
   );
 }
 
-async function renderDemo(request: Request, env: Env, ctx: ExecutionContext) {
+async function renderDemo(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<Response> {
   let url = new URL(request.url);
   let domain = new URL("/", url).href;
   let file = url.pathname.slice("/_demo".length);
@@ -91,6 +114,54 @@ async function renderDemo(request: Request, env: Env, ctx: ExecutionContext) {
       headers: { "Content-Type": "text/html" },
     }
   );
+}
+
+async function renderFiles(
+  request: Request,
+  { GITHUB_MD }: Env,
+  ctx: ExecutionContext
+): Promise<Response> {
+  let now = Date.now();
+  let url = new URL(request.url);
+  let [user, repo, sha] = url.pathname.split("/").filter((s) => s !== "");
+
+  let filesJsonKey = `files${url.pathname}`;
+  let cached = (await GITHUB_MD.get(filesJsonKey, {
+    cacheTtl: STALE_FOR_SECONDS,
+    type: "json",
+  })) as CachedFiles | null;
+
+  if (cached && cached.staleAt < now) {
+    ctx.waitUntil(
+      createNewFilesCacheEntry(user, repo, sha, now).then(
+        (toCache) =>
+          toCache &&
+          GITHUB_MD.put(filesJsonKey, JSON.stringify(toCache), {
+            expirationTtl: STALE_FOR_SECONDS,
+          })
+      )
+    );
+  } else if (!cached) {
+    cached = await createNewFilesCacheEntry(user, repo, sha, now);
+    if (cached) {
+      ctx.waitUntil(
+        GITHUB_MD.put(filesJsonKey, JSON.stringify(cached), {
+          expirationTtl: STALE_FOR_SECONDS,
+        })
+      );
+    }
+  }
+
+  if (!cached) {
+    return new Response(JSON.stringify({ error: "Not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  return new Response(JSON.stringify(cached), {
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 async function renderMarkdown(
@@ -145,7 +216,12 @@ async function createNewCacheEntry(
   now: number
 ): Promise<Cached | null> {
   let contentResponse = await fetch(
-    new URL(url.pathname, "https://raw.githubusercontent.com/").href
+    new URL(url.pathname, "https://raw.githubusercontent.com/").href,
+    {
+      headers: {
+        "User-Agent": "github-md.com",
+      },
+    }
   );
   if (!contentResponse.ok) return null;
   let markdown = await contentResponse.text();
@@ -154,6 +230,48 @@ async function createNewCacheEntry(
 
   return {
     ...data,
+    staleAt: now + REVALIDATE_AFTER_MS,
+  };
+}
+
+async function createNewFilesCacheEntry(
+  user: string,
+  repo: string,
+  sha: string,
+  now: number
+): Promise<CachedFiles | null> {
+  let contentResponse = await fetch(
+    `https://api.github.com/repos/${user}/${repo}/git/trees/${sha}?recursive=1`,
+    {
+      headers: {
+        "User-Agent": "github-md.com",
+      },
+    }
+  );
+
+  if (!contentResponse.ok) return null;
+  let content = (await contentResponse.json()) as {
+    sha: string;
+    tree: {
+      path: string;
+      type: "blob" | "tree";
+      sha: string;
+    }[];
+  };
+
+  let files = content.tree.reduce((acc, item) => {
+    if (item.type === "blob" && item.path.toLocaleLowerCase().endsWith(".md")) {
+      acc.push({
+        path: item.path,
+        sha: item.sha,
+      });
+    }
+    return acc;
+  }, [] as CachedFile[]);
+
+  return {
+    sha: content.sha,
+    files: await Promise.all(files),
     staleAt: now + REVALIDATE_AFTER_MS,
   };
 }
