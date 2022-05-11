@@ -102,10 +102,10 @@ async function renderMarkdown(
   let url = new URL(request.url);
 
   let kvJsonKey = `json-swr${url.pathname}`;
-  let cachedJson = await GITHUB_MD.get(kvJsonKey, {
+  let cached = (await GITHUB_MD.get(kvJsonKey, {
     cacheTtl: STALE_FOR_SECONDS,
-  });
-  let cached = cachedJson ? JSON.parse(cachedJson) : null;
+    type: "json",
+  })) as Cached | null;
 
   if (cached && cached.staleAt < now) {
     ctx.waitUntil(
