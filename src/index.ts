@@ -22,7 +22,17 @@ const entry = {
       let domain = new URL("/", url).href;
 
       if (url.pathname === "/") {
-        let html = renderToString(createElement(Docs, { domain }));
+        let markdownResponse = await entry.fetch(
+          new Request(new URL("/jacob-ebey/github-md/main/README.md", domain).href),
+          { GITHUB_MD },
+          ctx
+        );
+        let markdown = (await markdownResponse.json()) as {
+          error: string;
+          html: string;
+        };
+
+        let html = renderToString(createElement(Docs, { html: markdown.html || markdown.error }));
         return new Response("<!DOCTYPE html>" + html, {
           headers: { "Content-Type": "text/html" },
         });
