@@ -111,20 +111,13 @@ async function renderMarkdown(
     ctx.waitUntil(
       createNewCacheEntry(url, now).then(
         (toCache) =>
-          toCache &&
-          GITHUB_MD.put(kvJsonKey, JSON.stringify(toCache), {
-            expirationTtl: STALE_FOR_SECONDS,
-          })
+          toCache && GITHUB_MD.put(kvJsonKey, JSON.stringify(toCache))
       )
     );
   } else if (!cached) {
     cached = await createNewCacheEntry(url, now);
     if (cached) {
-      ctx.waitUntil(
-        GITHUB_MD.put(kvJsonKey, JSON.stringify(cached), {
-          expirationTtl: STALE_FOR_SECONDS,
-        })
-      );
+      ctx.waitUntil(GITHUB_MD.put(kvJsonKey, JSON.stringify(cached)));
     }
   }
 
