@@ -151,10 +151,15 @@ async function createNewCacheEntry(
   };
 }
 
+function emojiReplacer(match: string) {
+  return emoji.emojify(match);
+}
+
 function parseMarkdown(markdown: string): ApiData {
   let { body, attributes } = frontmatter(markdown);
-  const replacer = (match: string) => emoji.emojify(match);
-  body = body.replace(/(:.*:)/g, replacer);
+
+  body = body.replace(/(:.*:)/g, emojiReplacer);
+
   let html = marked(body, {
     highlight: (code, language) => {
       if (language && hljs.getLanguage(language)) {
