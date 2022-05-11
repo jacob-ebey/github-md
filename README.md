@@ -6,7 +6,7 @@ Source: https://github.com/jacob-ebey/github-md
 
 ## Endpoint
 
-```
+```text
 /[username]/[repository]/[branch|tag|sha]/[filepath]
 ```
 

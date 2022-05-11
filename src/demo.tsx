@@ -1,9 +1,10 @@
-import { h } from "preact";
+import * as React from "react";
 
 export default function Demo({ html }: { html: string }) {
   return (
     <html>
       <head>
+        <meta charSet="UTF-8" />
         <title>github-md</title>
         <meta name="description" content="A markdown parser API for GitHub" />
         <link
