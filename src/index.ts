@@ -51,20 +51,31 @@ async function handleFetch(
   env: Env,
   ctx: ExecutionContext
 ): Promise<Response> {
-  let url = new URL(request.url);
+  try {
+    let url = new URL(request.url);
 
-  if (url.pathname === "/") {
-    return renderDocs(request, env, ctx);
-  }
-  if (url.pathname.startsWith("/_demo/")) {
-    return renderDemo(request, env, ctx);
-  }
+    if (url.pathname === "/") {
+      return renderDocs(request, env, ctx);
+    }
+    if (url.pathname.startsWith("/_demo/")) {
+      return renderDemo(request, env, ctx);
+    }
 
-  if (url.pathname.split("/").filter((s) => s !== "").length === 3) {
-    return renderFiles(request, env, ctx);
-  }
+    if (url.pathname.split("/").filter((s) => s !== "").length === 3) {
+      return renderFiles(request, env, ctx);
+    }
 
-  return renderMarkdown(request, env, ctx);
+    return renderMarkdown(request, env, ctx);
+  } catch (error) {
+    console.log(error);
+
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
 }
 
 async function renderDocs(
