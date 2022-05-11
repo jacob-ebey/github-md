@@ -16,6 +16,16 @@ export default function Docs({ domain }: { domain: string }) {
           <article>
             <h1>github-md</h1>
             <p>A markdown parser API for GitHub.</p>
+            <p>
+              Source:{" "}
+              <a
+                href="https://github.com/jacob-ebey/github-md"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                https://github.com/jacob-ebey/github-md
+              </a>
+            </p>
 
             <h2>Endpoint</h2>
             <p>
