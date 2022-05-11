@@ -1,6 +1,6 @@
 # github-md
 
-A markdown parser API for GitHub.
+A markdown parser API for GitHub. SWR for 2 days with revalidation every 5 minutes.
 
 Source: https://github.com/jacob-ebey/github-md
 
