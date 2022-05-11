@@ -1,0 +1,7 @@
+name = "github-md"
+main = "src/index.ts"
+compatibility_date = "2022-05-11"
+
+kv_namespaces = [
+  { binding = "GITHUB_MD", id = "1ea82ec3445f40fe878d408f88ffb23f", preview_id = "0cb8b91feebf40e6b9787a38d49e224c" }
+]
