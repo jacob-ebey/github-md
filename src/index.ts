@@ -227,7 +227,10 @@ const entry = {
       });
     } catch (error: any) {
       console.log(error);
-      return new Response("Something went wrong", { status: 500 });
+      return new Response(JSON.stringify({ error: "Something went wrong" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
     }
   },
 };
