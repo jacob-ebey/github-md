@@ -105,7 +105,7 @@ async function renderMarkdown(
   let cachedJson = await GITHUB_MD.get(kvJsonKey);
   let cached = cachedJson ? JSON.parse(cachedJson) : null;
 
-  if (cached && cached.staleAt >= now) {
+  if (cached && cached.staleAt < now) {
     ctx.waitUntil(
       createNewCacheEntry(url, now).then(
         (toCache) =>
