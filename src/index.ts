@@ -9,8 +9,8 @@ import sanitize from "sanitize-html";
 
 import Demo from "./demo";
 
-const REVALIDATE_AFTER_MS = 5 * 60 * 1000;
-const STALE_FOR_SECONDS = 2 * 24 * 60 * 60;
+let REVALIDATE_AFTER_MS = 5 * 60 * 1000;
+let STALE_FOR_SECONDS = 2 * 24 * 60 * 60;
 
 type Env = {
   GITHUB_MD: KVNamespace;
@@ -111,13 +111,20 @@ async function renderMarkdown(
     ctx.waitUntil(
       createNewCacheEntry(url, now).then(
         (toCache) =>
-          toCache && GITHUB_MD.put(kvJsonKey, JSON.stringify(toCache))
+          toCache &&
+          GITHUB_MD.put(kvJsonKey, JSON.stringify(toCache), {
+            expirationTtl: STALE_FOR_SECONDS,
+          })
       )
     );
   } else if (!cached) {
     cached = await createNewCacheEntry(url, now);
     if (cached) {
-      ctx.waitUntil(GITHUB_MD.put(kvJsonKey, JSON.stringify(cached)));
+      ctx.waitUntil(
+        GITHUB_MD.put(kvJsonKey, JSON.stringify(cached), {
+          expirationTtl: STALE_FOR_SECONDS,
+        })
+      );
     }
   }
 
