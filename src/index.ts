@@ -106,7 +106,11 @@ async function renderDocs(
   return new Response(
     "<!DOCTYPE html>" + renderToString(createElement(Demo, { html })),
     {
-      headers: { "Content-Type": "text/html" },
+      headers: {
+        "Content-Type": "text/html",
+        "Cache-Control":
+          markdownResponse.headers.get("Cache-Control") || "no-cache",
+      },
     }
   );
 }
@@ -141,9 +145,8 @@ async function renderDemo(
     {
       headers: {
         "Content-Type": "text/html",
-        "Cache-Control": `public, max-age=${
-          REVALIDATE_AFTER_MS / 1000
-        } s-maxage=${REVALIDATE_AFTER_MS / 1000}`,
+        "Cache-Control":
+          markdownResponse.headers.get("Cache-Control") || "no-cache",
       },
     }
   );
