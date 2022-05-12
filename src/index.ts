@@ -160,7 +160,6 @@ async function renderDemo(
 
 async function renderFiles(
   request: Request,
-  // { GITHUB_MD }: Env,
   ctx: ExecutionContext
 ): Promise<Response> {
   let now = Date.now();
