@@ -465,7 +465,8 @@ function parseMarkdown(markdown: string): ApiData {
 
 function shouldSkipCache(request: Request): boolean {
   let hasNoCache =
-    request.headers.get("Cache-Control")?.toLowerCase() === "no-cache";
+    request.headers.get("Cache-Control")?.toLowerCase().includes("no-cache") ||
+    false;
 
   return hasNoCache;
 }
