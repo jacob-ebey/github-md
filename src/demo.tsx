@@ -2,11 +2,12 @@ import * as React from "react";
 
 export default function Demo({ html }: { html: string }) {
   return (
-    <html>
+    <html lang="en-us">
       <head>
         <meta charSet="UTF-8" />
         <title>github-md</title>
         <meta name="description" content="A markdown parser API for GitHub" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link
           rel="stylesheet"
           href="https://unpkg.com/@exampledev/new.css@1.1.3/new.css"
