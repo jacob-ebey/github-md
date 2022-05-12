@@ -200,9 +200,9 @@ async function renderFiles(
   return new Response(JSON.stringify(cached), {
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": `public, immutable, max-age=${
+      "Cache-Control": `public, max-age=${
         REVALIDATE_AFTER_MS / 1000
-      }, s-maxage=${REVALIDATE_AFTER_MS / 1000}`,
+      }, s-maxage=${REVALIDATE_AFTER_MS / 1000}, immutable`,
     },
   });
 }
@@ -254,9 +254,9 @@ async function renderMarkdown(
   return new Response(JSON.stringify(cached), {
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": `public, immutable, max-age=${
+      "Cache-Control": `public, max-age=${
         REVALIDATE_AFTER_MS / 1000
-      }, s-maxage=${REVALIDATE_AFTER_MS / 1000}`,
+      }, s-maxage=${REVALIDATE_AFTER_MS / 1000}, immutable`,
     },
   });
 }
