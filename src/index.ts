@@ -137,10 +137,12 @@ async function renderFiles(
   let [user, repo, sha] = url.pathname.split("/").filter((s) => s !== "");
 
   let filesJsonKey = `files${url.pathname}`;
-  let cached = (await GITHUB_MD.get(filesJsonKey, {
-    cacheTtl: STALE_FOR_SECONDS,
-    type: "json",
-  })) as CachedFiles | null;
+  let cached = shouldSkipCache(request)
+    ? null
+    : ((await GITHUB_MD.get(filesJsonKey, {
+        cacheTtl: STALE_FOR_SECONDS,
+        type: "json",
+      })) as CachedFiles | null);
 
   if (cached && cached.staleAt < now) {
     ctx.waitUntil(
@@ -184,10 +186,12 @@ async function renderMarkdown(
   let url = new URL(request.url);
 
   let kvJsonKey = `json-swr${url.pathname}`;
-  let cached = (await GITHUB_MD.get(kvJsonKey, {
-    cacheTtl: STALE_FOR_SECONDS,
-    type: "json",
-  })) as Cached | null;
+  let cached = shouldSkipCache(request)
+    ? null
+    : ((await GITHUB_MD.get(kvJsonKey, {
+        cacheTtl: STALE_FOR_SECONDS,
+        type: "json",
+      })) as Cached | null);
 
   if (cached && cached.staleAt < now) {
     ctx.waitUntil(
@@ -413,4 +417,11 @@ function parseMarkdown(markdown: string): ApiData {
   });
 
   return { attributes, html };
+}
+
+function shouldSkipCache(request: Request): boolean {
+  let hasNoCache =
+    request.headers.get("Cache-Control")?.toLowerCase() === "no-cache";
+
+  return hasNoCache;
 }
