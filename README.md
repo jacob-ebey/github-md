@@ -16,7 +16,6 @@ Source: https://github.com/jacob-ebey/github-md
 
 - `attributes`: The attributes parsed off the front matter
 - `html`: The HTML rendered from the markdown
-- `staleAt`: When the response will be revalidated in the background
 
 #### Examples:
 
@@ -34,7 +33,6 @@ Source: https://github.com/jacob-ebey/github-md
 
 - `sha`: The sha of the commit
 - `files`: The list of files in the format of `{ path: string; sha: string }`
-- `staleAt`: When the response will be revalidated in the background
 
 #### Examples:
 
