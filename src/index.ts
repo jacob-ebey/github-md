@@ -9,7 +9,7 @@ import sanitize from "sanitize-html";
 
 import Demo from "./demo";
 
-let REVALIDATE_AFTER_MS = 5 * 60 * 1000;
+let REVALIDATE_AFTER_SECONDS = 5 * 60;
 let STALE_FOR_SECONDS = 2 * 24 * 60 * 60;
 
 declare global {
@@ -172,9 +172,9 @@ async function renderFiles(
     ? null
     : await readFromCache(filesJsonKey);
 
-  let data: CachedFiles | null;
+  let response: Response | null = null;
   if (cached) {
-    data = cached.data as CachedFiles;
+    response = cached.response;
 
     if (cached.staleAt < now) {
       ctx.waitUntil(
@@ -184,27 +184,29 @@ async function renderFiles(
       );
     }
   } else {
-    data = await createNewFilesCacheEntry(user, repo, sha);
+    let data = await createNewFilesCacheEntry(user, repo, sha);
     if (data) {
+      response = new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json" },
+      });
+
       ctx.waitUntil(writeToCache(filesJsonKey, data));
     }
   }
 
-  if (!data) {
+  if (!response) {
     return new Response(JSON.stringify({ error: "Not found" }), {
       status: 404,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  return new Response(JSON.stringify(data), {
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": `public, max-age=${
-        REVALIDATE_AFTER_MS / 1000
-      }, immutable`,
-    },
-  });
+  response.headers.set(
+    "Cache-Control",
+    `public, max-age=${REVALIDATE_AFTER_SECONDS}, immutable`
+  );
+
+  return response;
 }
 
 async function renderMarkdown(
@@ -217,9 +219,9 @@ async function renderMarkdown(
   let kvJsonKey = `json-swr${url.pathname}`;
   let cached = shouldSkipCache(request) ? null : await readFromCache(kvJsonKey);
 
-  let data: ApiData | null;
+  let response: Response | null = null;
   if (cached) {
-    data = cached.data as ApiData;
+    response = cached.response;
 
     if (cached.staleAt < now) {
       ctx.waitUntil(
@@ -229,52 +231,57 @@ async function renderMarkdown(
       );
     }
   } else {
-    data = await createNewCacheEntry(url);
+    let data = await createNewCacheEntry(url);
     if (data) {
+      response = new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json" },
+      });
+
       ctx.waitUntil(writeToCache(kvJsonKey, data));
     }
   }
 
-  if (!data) {
+  if (!response) {
     return new Response(JSON.stringify({ error: "Not found" }), {
       status: 404,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  return new Response(JSON.stringify(data), {
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": `public, max-age=${
-        REVALIDATE_AFTER_MS / 1000
-      }, immutable`,
-    },
-  });
+  response.headers.set(
+    "Cache-Control",
+    `public, max-age=${REVALIDATE_AFTER_SECONDS}, immutable`
+  );
+
+  return response;
 }
 
 async function readFromCache(
   key: string
-): Promise<{ data: unknown; staleAt: number } | null> {
+): Promise<{ response: Response; staleAt: number } | null> {
   let url = `kv://${key}`;
-  let match = await caches.default.match(url, {});
-  if (!match) return null;
-  let data = await match.json();
+  let response = await caches.default.match(url, {});
+  if (!response) return null;
 
   return {
-    data,
-    staleAt: Number(match.headers.get("Stale-At") || 0),
+    response,
+    staleAt: Number(response.headers.get("Stale-At") || 0),
   };
 }
 
-async function writeToCache(key: string, value: unknown): Promise<void> {
+async function writeToCache(
+  key: string,
+  value: unknown,
+  contentType: string = "application/json"
+): Promise<void> {
   let url = `kv://${key}`;
   await caches.default.put(
     url,
     new Response(JSON.stringify(value), {
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": contentType,
         "Cache-Control": `public, max-age=${STALE_FOR_SECONDS}, immutable`,
-        "Stale-At": (Date.now() + REVALIDATE_AFTER_MS).toFixed(0),
+        "Stale-At": (Date.now() + REVALIDATE_AFTER_SECONDS * 1000).toFixed(0),
       },
     })
   );
