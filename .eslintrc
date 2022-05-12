@@ -1,0 +1,4 @@
+{
+  "extends": ["@remix-run/eslint-config"],
+  "ignorePatterns": [".*/**/*", "*/node_modules/*"]
+}
