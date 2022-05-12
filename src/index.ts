@@ -55,18 +55,27 @@ async function handleFetch(
   try {
     let url = new URL(request.url);
 
+    let response = shouldSkipCache(request)
+      ? null
+      : await caches.default.match(request.url);
+
+    if (response) {
+      return response;
+    }
+
     if (url.pathname === "/") {
-      return renderDocs(request, ctx);
-    }
-    if (url.pathname.startsWith("/_demo/")) {
-      return renderDemo(request, ctx);
+      response = await renderDocs(request, ctx);
+    } else if (url.pathname.startsWith("/_demo/")) {
+      response = await renderDemo(request, ctx);
+    } else if (url.pathname.split("/").filter((s) => s !== "").length === 3) {
+      response = await renderFiles(request, ctx);
+    } else {
+      response = await renderMarkdown(request, ctx);
     }
 
-    if (url.pathname.split("/").filter((s) => s !== "").length === 3) {
-      return renderFiles(request, ctx);
-    }
+    ctx.waitUntil(caches.default.put(request.url, response.clone()));
 
-    return renderMarkdown(request, ctx);
+    return response;
   } catch (error) {
     console.log(error);
 
