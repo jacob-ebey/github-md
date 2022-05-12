@@ -86,8 +86,17 @@ async function renderDocs(
   let url = new URL(request.url);
   let domain = new URL("/", url).href;
 
+  let markdownHeaders = new Headers();
+  request.headers.has("Cache-Control") &&
+    markdownHeaders.append(
+      "Cache-Control",
+      request.headers.get("Cache-Control")!
+    );
+
   let markdownResponse = await handleFetch(
-    new Request(new URL("/jacob-ebey/github-md/main/README.md", domain).href),
+    new Request(new URL("/jacob-ebey/github-md/main/README.md", domain).href, {
+      headers: markdownHeaders,
+    }),
     env,
     ctx
   );
@@ -111,8 +120,16 @@ async function renderDemo(
   let domain = new URL("/", url).href;
   let file = url.pathname.slice("/_demo".length);
 
+  let markdownHeaders = new Headers();
+  request.headers.has("Cache-Control") &&
+    markdownHeaders.append(
+      "Cache-Control",
+      request.headers.get("Cache-Control")!
+    );
   let markdownResponse = await handleFetch(
-    new Request(new Request(new URL(file, domain).href)),
+    new Request(new URL(file, domain).href, {
+      headers: markdownHeaders,
+    }),
     env,
     ctx
   );
