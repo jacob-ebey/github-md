@@ -139,7 +139,12 @@ async function renderDemo(
   return new Response(
     "<!DOCTYPE html>" + renderToString(createElement(Demo, { html })),
     {
-      headers: { "Content-Type": "text/html" },
+      headers: {
+        "Content-Type": "text/html",
+        "Cache-Control": `public, max-age=${
+          REVALIDATE_AFTER_MS / 1000
+        } s-maxage=${REVALIDATE_AFTER_MS / 1000}`,
+      },
     }
   );
 }
@@ -190,7 +195,12 @@ async function renderFiles(
   }
 
   return new Response(JSON.stringify(cached), {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": `public, max-age=${
+        REVALIDATE_AFTER_MS / 1000
+      } s-maxage=${REVALIDATE_AFTER_MS / 1000}`,
+    },
   });
 }
 
@@ -239,7 +249,12 @@ async function renderMarkdown(
   }
 
   return new Response(JSON.stringify(cached), {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": `public, max-age=${
+        REVALIDATE_AFTER_MS / 1000
+      } s-maxage=${REVALIDATE_AFTER_MS / 1000}`,
+    },
   });
 }
 
