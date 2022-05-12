@@ -202,7 +202,7 @@ async function renderFiles(
       "Content-Type": "application/json",
       "Cache-Control": `public, max-age=${
         REVALIDATE_AFTER_MS / 1000
-      } s-maxage=${REVALIDATE_AFTER_MS / 1000}`,
+      }, s-maxage=${REVALIDATE_AFTER_MS / 1000}`,
     },
   });
 }
@@ -256,7 +256,7 @@ async function renderMarkdown(
       "Content-Type": "application/json",
       "Cache-Control": `public, max-age=${
         REVALIDATE_AFTER_MS / 1000
-      } s-maxage=${REVALIDATE_AFTER_MS / 1000}`,
+      }, s-maxage=${REVALIDATE_AFTER_MS / 1000}`,
     },
   });
 }
