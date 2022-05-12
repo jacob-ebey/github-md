@@ -12,9 +12,13 @@ import Demo from "./demo";
 let REVALIDATE_AFTER_MS = 5 * 60 * 1000;
 let STALE_FOR_SECONDS = 2 * 24 * 60 * 60;
 
-type Env = {
-  GITHUB_MD: KVNamespace;
-};
+declare global {
+  interface CacheStorage {
+    default: Cache;
+  }
+}
+
+type Env = {};
 
 type ApiData = {
   attributes: unknown;
@@ -27,9 +31,7 @@ type ApiError = {
 
 type ApiResponse = ApiData | ApiError;
 
-type Cached = ApiData & {
-  staleAt: number;
-};
+type Cached = ApiData;
 
 type CachedFile = {
   path: string;
@@ -39,7 +41,6 @@ type CachedFile = {
 type CachedFiles = {
   sha: string;
   files: CachedFile[];
-  staleAt: number;
 };
 
 export default {
@@ -55,17 +56,17 @@ async function handleFetch(
     let url = new URL(request.url);
 
     if (url.pathname === "/") {
-      return renderDocs(request, env, ctx);
+      return renderDocs(request, ctx);
     }
     if (url.pathname.startsWith("/_demo/")) {
-      return renderDemo(request, env, ctx);
+      return renderDemo(request, ctx);
     }
 
     if (url.pathname.split("/").filter((s) => s !== "").length === 3) {
-      return renderFiles(request, env, ctx);
+      return renderFiles(request, ctx);
     }
 
-    return renderMarkdown(request, env, ctx);
+    return renderMarkdown(request, ctx);
   } catch (error) {
     console.log(error);
 
@@ -80,7 +81,6 @@ async function handleFetch(
 
 async function renderDocs(
   request: Request,
-  env: Env,
   ctx: ExecutionContext
 ): Promise<Response> {
   let url = new URL(request.url);
@@ -93,11 +93,10 @@ async function renderDocs(
       request.headers.get("Cache-Control")!
     );
 
-  let markdownResponse = await handleFetch(
+  let markdownResponse = await renderMarkdown(
     new Request(new URL("/jacob-ebey/github-md/main/README.md", domain).href, {
       headers: markdownHeaders,
     }),
-    env,
     ctx
   );
   let markdownJson = (await markdownResponse.json()) as ApiResponse;
@@ -117,7 +116,6 @@ async function renderDocs(
 
 async function renderDemo(
   request: Request,
-  env: Env,
   ctx: ExecutionContext
 ): Promise<Response> {
   let url = new URL(request.url);
@@ -130,11 +128,10 @@ async function renderDemo(
       "Cache-Control",
       request.headers.get("Cache-Control")!
     );
-  let markdownResponse = await handleFetch(
+  let markdownResponse = await renderMarkdown(
     new Request(new URL(file, domain).href, {
       headers: markdownHeaders,
     }),
-    env,
     ctx
   );
   let markdownJson = (await markdownResponse.json()) as ApiResponse;
@@ -154,7 +151,7 @@ async function renderDemo(
 
 async function renderFiles(
   request: Request,
-  { GITHUB_MD }: Env,
+  // { GITHUB_MD }: Env,
   ctx: ExecutionContext
 ): Promise<Response> {
   let now = Date.now();
@@ -164,107 +161,117 @@ async function renderFiles(
   let filesJsonKey = `files${url.pathname}`;
   let cached = shouldSkipCache(request)
     ? null
-    : ((await GITHUB_MD.get(filesJsonKey, {
-        cacheTtl: STALE_FOR_SECONDS,
-        type: "json",
-      })) as CachedFiles | null);
+    : await readFromCache(filesJsonKey);
 
-  if (cached && cached.staleAt < now) {
-    ctx.waitUntil(
-      createNewFilesCacheEntry(user, repo, sha, now).then(
-        (toCache) =>
-          toCache &&
-          GITHUB_MD.put(filesJsonKey, JSON.stringify(toCache), {
-            expirationTtl: STALE_FOR_SECONDS,
-          })
-      )
-    );
-  } else if (!cached) {
-    cached = await createNewFilesCacheEntry(user, repo, sha, now);
-    if (cached) {
+  let data: CachedFiles | null;
+  if (cached) {
+    data = cached.data as CachedFiles;
+
+    if (cached.staleAt < now) {
       ctx.waitUntil(
-        GITHUB_MD.put(filesJsonKey, JSON.stringify(cached), {
-          expirationTtl: STALE_FOR_SECONDS,
-        })
+        createNewFilesCacheEntry(user, repo, sha).then(
+          (toCache) => toCache && writeToCache(filesJsonKey, toCache)
+        )
       );
+    }
+  } else {
+    data = await createNewFilesCacheEntry(user, repo, sha);
+    if (data) {
+      ctx.waitUntil(writeToCache(filesJsonKey, data));
     }
   }
 
-  if (!cached) {
+  if (!data) {
     return new Response(JSON.stringify({ error: "Not found" }), {
       status: 404,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  return new Response(JSON.stringify(cached), {
+  return new Response(JSON.stringify(data), {
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": `public, max-age=${
         REVALIDATE_AFTER_MS / 1000
-      }, s-maxage=${REVALIDATE_AFTER_MS / 1000}, immutable`,
+      }, immutable`,
     },
   });
 }
 
 async function renderMarkdown(
   request: Request,
-  { GITHUB_MD }: Env,
   ctx: ExecutionContext
 ): Promise<Response> {
   let now = Date.now();
   let url = new URL(request.url);
 
   let kvJsonKey = `json-swr${url.pathname}`;
-  let cached = shouldSkipCache(request)
-    ? null
-    : ((await GITHUB_MD.get(kvJsonKey, {
-        cacheTtl: STALE_FOR_SECONDS,
-        type: "json",
-      })) as Cached | null);
+  let cached = shouldSkipCache(request) ? null : await readFromCache(kvJsonKey);
 
-  if (cached && cached.staleAt < now) {
-    ctx.waitUntil(
-      createNewCacheEntry(url, now).then(
-        (toCache) =>
-          toCache &&
-          GITHUB_MD.put(kvJsonKey, JSON.stringify(toCache), {
-            expirationTtl: STALE_FOR_SECONDS,
-          })
-      )
-    );
-  } else if (!cached) {
-    cached = await createNewCacheEntry(url, now);
-    if (cached) {
+  let data: ApiData | null;
+  if (cached) {
+    data = cached.data as ApiData;
+
+    if (cached.staleAt < now) {
       ctx.waitUntil(
-        GITHUB_MD.put(kvJsonKey, JSON.stringify(cached), {
-          expirationTtl: STALE_FOR_SECONDS,
-        })
+        createNewCacheEntry(url).then(
+          (toCache) => toCache && writeToCache(kvJsonKey, toCache)
+        )
       );
+    }
+  } else {
+    data = await createNewCacheEntry(url);
+    if (data) {
+      ctx.waitUntil(writeToCache(kvJsonKey, data));
     }
   }
 
-  if (!cached) {
+  if (!data) {
     return new Response(JSON.stringify({ error: "Not found" }), {
       status: 404,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  return new Response(JSON.stringify(cached), {
+  return new Response(JSON.stringify(data), {
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": `public, max-age=${
         REVALIDATE_AFTER_MS / 1000
-      }, s-maxage=${REVALIDATE_AFTER_MS / 1000}, immutable`,
+      }, immutable`,
     },
   });
 }
 
-async function createNewCacheEntry(
-  url: URL,
-  now: number
-): Promise<Cached | null> {
+async function readFromCache(
+  key: string
+): Promise<{ data: unknown; staleAt: number } | null> {
+  let url = `kv://${key}`;
+  let match = await caches.default.match(url, {});
+  if (!match) return null;
+  let data = await match.json();
+
+  return {
+    data,
+    staleAt: Number(match.headers.get("Stale-At") || 0),
+  };
+}
+
+async function writeToCache(key: string, value: unknown): Promise<void> {
+  let url = `kv://${key}`;
+  await caches.default.put(
+    url,
+    new Response(JSON.stringify(value), {
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": `public, max-age=${STALE_FOR_SECONDS}, immutable`,
+        "Stale-At": (Date.now() + REVALIDATE_AFTER_MS).toFixed(0),
+      },
+    })
+  );
+}
+
+async function createNewCacheEntry(url: URL): Promise<Cached | null> {
   let contentResponse = await fetch(
     new URL(url.pathname, "https://raw.githubusercontent.com/").href,
     {
@@ -276,19 +283,13 @@ async function createNewCacheEntry(
   if (!contentResponse.ok) return null;
   let markdown = await contentResponse.text();
 
-  let data = parseMarkdown(markdown);
-
-  return {
-    ...data,
-    staleAt: now + REVALIDATE_AFTER_MS,
-  };
+  return parseMarkdown(markdown);
 }
 
 async function createNewFilesCacheEntry(
   user: string,
   repo: string,
-  sha: string,
-  now: number
+  sha: string
 ): Promise<CachedFiles | null> {
   let contentResponse = await fetch(
     `https://api.github.com/repos/${user}/${repo}/git/trees/${sha}?recursive=1`,
@@ -322,7 +323,6 @@ async function createNewFilesCacheEntry(
   return {
     sha: content.sha,
     files: await Promise.all(files),
-    staleAt: now + REVALIDATE_AFTER_MS,
   };
 }
 
