@@ -70,7 +70,7 @@ async function handleFetch(
 
     if (url.pathname === "/") {
       response = await renderDocs(request, ctx);
-    } else if (url.pathname.startsWith("/blob/")) {
+    } else if (url.pathname.split("/")[3] === "blob") {
       response = await renderDemo(request, ctx);
     } else if (url.pathname.split("/").filter((s) => s !== "").length === 3) {
       response = await renderFiles(request, ctx);
