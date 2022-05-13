@@ -230,13 +230,13 @@ async function renderMarkdown(
 
     if (cached.staleAt < now) {
       ctx.waitUntil(
-        createNewCacheEntry(url).then(
+        getMarkdownFromGitHub(url).then(
           (toCache) => toCache && writeToCache(kvJsonKey, toCache)
         )
       );
     }
   } else {
-    let data = await createNewCacheEntry(url);
+    let data = await getMarkdownFromGitHub(url);
     if (data) {
       response = new Response(JSON.stringify(data), {
         headers: { "Content-Type": "application/json" },
@@ -292,7 +292,7 @@ async function writeToCache(
   );
 }
 
-async function createNewCacheEntry(url: URL): Promise<Cached | null> {
+async function getMarkdownFromGitHub(url: URL): Promise<Cached | null> {
   let contentResponse = await fetch(
     new URL(url.pathname, "https://raw.githubusercontent.com/").href,
     {
