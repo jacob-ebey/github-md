@@ -4,6 +4,8 @@ A markdown parser API for GitHub. SWR for 2 days with revalidation every 5 minut
 
 Source: https://github.com/jacob-ebey/github-md
 
+> You can change the URL when browsing github to to include `-md` for a preview of the rendered markdown
+
 ## Endpoints
 
 ### Parse Markdown
@@ -21,7 +23,6 @@ Source: https://github.com/jacob-ebey/github-md
 
 - https://github-md.com/remix-run/remix/main/docs/index.md
 - https://github-md.com/facebook/react/17.0.2/README.md
-
 
 ### List Markdown Files
 
