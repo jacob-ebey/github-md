@@ -1,0 +1,22 @@
+name: 🕊 Deploy
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: 🕊 Deploy
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v3
+
+      - name: 📥 Install deps
+        uses: bahmutov/npm-install@v1
+
+      - name: 🚀 Publish
+        uses: cloudflare/wrangler-action@2.0.0
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          wranglerVersion: "2.0.3"
