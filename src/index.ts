@@ -149,8 +149,16 @@ async function renderDemo(
     }),
     ctx
   );
+  if (markdownResponse.status === 404 && !url.pathname.endsWith(".md")) {
+    url.pathname = url.pathname + ".md";
+    return new Response(null, { status: 302, headers: { Location: url.href } });
+  }
   let markdownJson = (await markdownResponse.json()) as ApiResponse;
   let html = "html" in markdownJson ? markdownJson.html : markdownJson.error;
+
+  let publicPath = url.pathname.split("/").slice(0, 5).join("/");
+  console.log(publicPath);
+  html = html.replace(/href="\//g, `href="${publicPath}/`);
 
   return new Response(
     "<!DOCTYPE html>" + renderToString(createElement(Demo, { html })),
