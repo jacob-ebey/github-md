@@ -135,7 +135,7 @@ async function renderDemo(
 ): Promise<Response> {
   let url = new URL(request.url);
   let domain = new URL("/", url).href;
-  let file = url.pathname.slice("/blob".length);
+  let file = url.pathname.replace("/blob/", "/");
 
   let markdownHeaders = new Headers();
   request.headers.has("Cache-Control") &&
