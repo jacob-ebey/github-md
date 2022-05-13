@@ -70,7 +70,7 @@ async function handleFetch(
 
     if (url.pathname === "/") {
       response = await renderDocs(request, ctx);
-    } else if (url.pathname.startsWith("/_demo/")) {
+    } else if (url.pathname.startsWith("/blob/")) {
       response = await renderDemo(request, ctx);
     } else if (url.pathname.split("/").filter((s) => s !== "").length === 3) {
       response = await renderFiles(request, ctx);
@@ -135,7 +135,7 @@ async function renderDemo(
 ): Promise<Response> {
   let url = new URL(request.url);
   let domain = new URL("/", url).href;
-  let file = url.pathname.slice("/_demo".length);
+  let file = url.pathname.slice("/blob".length);
 
   let markdownHeaders = new Headers();
   request.headers.has("Cache-Control") &&
