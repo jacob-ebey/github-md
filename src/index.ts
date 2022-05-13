@@ -8,6 +8,7 @@ import { marked } from "marked";
 import sanitize from "sanitize-html";
 
 import Demo from "./demo";
+import { initSentry } from "./sentry";
 
 let REVALIDATE_AFTER_SECONDS = 5 * 60;
 let STALE_FOR_SECONDS = 2 * 24 * 60 * 60;
@@ -18,7 +19,9 @@ declare global {
   }
 }
 
-type Env = {};
+type Env = {
+  SENTRY_DSN?: string;
+};
 
 type ApiData = {
   attributes: unknown;
@@ -52,6 +55,8 @@ async function handleFetch(
   env: Env,
   ctx: ExecutionContext
 ): Promise<Response> {
+  const sentry = initSentry(request, ctx, env.SENTRY_DSN);
+
   try {
     let url = new URL(request.url);
 
@@ -77,6 +82,7 @@ async function handleFetch(
 
     return response;
   } catch (error) {
+    sentry.captureException(error);
     console.log(error);
 
     return new Response(JSON.stringify({ error: "Internal server error" }), {
