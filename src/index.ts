@@ -116,9 +116,18 @@ async function renderDocs(
   );
   let markdownJson = (await markdownResponse.json()) as ApiResponse;
   let html = "html" in markdownJson ? markdownJson.html : markdownJson.error;
+  let title =
+    "attributes" in markdownJson
+      ? (markdownJson.attributes as any)?.title
+      : undefined;
+  let description =
+    "attributes" in markdownJson
+      ? (markdownJson.attributes as any)?.description
+      : undefined;
 
   return new Response(
-    "<!DOCTYPE html>" + renderToString(createElement(Demo, { html })),
+    "<!DOCTYPE html>" +
+      renderToString(createElement(Demo, { title, description, html })),
     {
       headers: {
         "Content-Type": "text/html",
@@ -155,13 +164,22 @@ async function renderDemo(
   }
   let markdownJson = (await markdownResponse.json()) as ApiResponse;
   let html = "html" in markdownJson ? markdownJson.html : markdownJson.error;
+  let title =
+    "attributes" in markdownJson
+      ? (markdownJson.attributes as any)?.title
+      : undefined;
+  let description =
+    "attributes" in markdownJson
+      ? (markdownJson.attributes as any)?.description
+      : undefined;
 
   let publicPath = url.pathname.split("/").slice(0, 5).join("/");
   console.log(publicPath);
   html = html.replace(/href="\//g, `href="${publicPath}/`);
 
   return new Response(
-    "<!DOCTYPE html>" + renderToString(createElement(Demo, { html })),
+    "<!DOCTYPE html>" +
+      renderToString(createElement(Demo, { title, description, html })),
     {
       headers: {
         "Content-Type": "text/html",

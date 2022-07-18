@@ -1,12 +1,23 @@
 import * as React from "react";
 
-export default function Demo({ html }: { html: string }) {
+export default function Demo({
+  title,
+  description,
+  html,
+}: {
+  title?: string;
+  description?: string;
+  html: string;
+}) {
   return (
     <html lang="en-us">
       <head>
         <meta charSet="UTF-8" />
-        <title>github-md</title>
-        <meta name="description" content="A markdown parser API for GitHub" />
+        <title>{title || "github-md"}</title>
+        <meta
+          name="description"
+          content={description || "A markdown parser API for GitHub"}
+        />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link
           rel="stylesheet"
