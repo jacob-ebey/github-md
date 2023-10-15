@@ -5,30 +5,28 @@
   "scripts": {
     "start": "wrangler dev --local",
     "publish": "wrangler publish",
-    "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
+    "lint": "biome check .",
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@types/markdown-it": "^12.2.3",
+    "@types/markdown-it": "^13.0.2",
     "front-matter": "^4.0.2",
-    "highlight.js": "^11.5.1",
+    "highlight.js": "^11.9.0",
     "marked": "^4.0.15",
-    "node-emoji": "^1.11.0",
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0",
-    "sanitize-html": "^2.7.0",
-    "toucan-js": "^2.6.0"
+    "node-emoji": "^2.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sanitize-html": "^2.11.0",
+    "toucan-js": "^3.3.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^3.10.0",
-    "@remix-run/eslint-config": "^1.4.3",
+    "@biomejs/biome": "^1.2.2",
+    "@cloudflare/workers-types": "^4.20231010.0",
     "@types/marked": "^4.0.3",
-    "@types/node-emoji": "^1.8.1",
-    "@types/react": "^18.0.9",
-    "@types/react-dom": "^18.0.3",
-    "@types/sanitize-html": "^2.6.2",
-    "eslint": "^8.11.0",
-    "typescript": "^4.6.4",
-    "wrangler": "2.0.2"
+    "@types/react": "^18.2.28",
+    "@types/react-dom": "^18.2.13",
+    "@types/sanitize-html": "^2.9.2",
+    "typescript": "^5.2.2",
+    "wrangler": "^3.13.1"
   }
 }
