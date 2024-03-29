@@ -230,12 +230,17 @@ async function renderFiles(
 		});
 	}
 
-	response.headers.set(
+	const responseHeaders = new Headers(response.headers);
+	responseHeaders.set(
 		"Cache-Control",
 		`public, max-age=${REVALIDATE_AFTER_SECONDS}, immutable`,
 	);
-
-	return response;
+	return new Response(response.body, {
+		duplex: "half",
+		headers: responseHeaders,
+		status: response.status,
+		statusText: response.statusText,
+	});
 }
 
 async function renderMarkdown(
@@ -279,12 +284,17 @@ async function renderMarkdown(
 		});
 	}
 
-	response.headers.set(
+	const responseHeaders = new Headers(response.headers);
+	responseHeaders.set(
 		"Cache-Control",
 		`public, max-age=${REVALIDATE_AFTER_SECONDS}, immutable`,
 	);
-
-	return response;
+	return new Response(response.body, {
+		duplex: "half",
+		headers: responseHeaders,
+		status: response.status,
+		statusText: response.statusText,
+	});
 }
 
 async function readFromCache(
